@@ -11,7 +11,6 @@ class Piece:
         self.row = row
         self.col = col
         self.color = color
-        self.king = False
 
         if self.color == WHITE:
             # If piece if WHITE, it is located at the bottom of the Board,
@@ -29,13 +28,15 @@ class Piece:
         self.x = SQUARE_SIZE * self.col + SQUARE_SIZE // 2
         self.y = SQUARE_SIZE * self.row + SQUARE_SIZE // 2
 
-    def make_king(self):
-        self.King = True
-
     def draw(self, win):
         radius = SQUARE_SIZE // 2 - self.PADDING
         pygame.draw.circle(win, GREY, (self.x, self.y), radius + self.OUTLINE)
         pygame.draw.circle(win, self.color, (self.x, self.y), radius)
+
+    def move(self, row, col):
+        self.row = row
+        self.col = col
+        self.calc_pos()
 
     def __repr__(self):
         return str(self.color)

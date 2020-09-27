@@ -8,11 +8,9 @@ class Board:
         """Initialize the Board."""
         # The self.board represents checkers on the board.
         self.board = []
-        self.selected_piece = None
 
         # The number of checkers left.
         self.black_left = self.white_left = 12
-        self.black_kings = self.white_kings = 0
 
         self.create_board()
 
@@ -38,6 +36,16 @@ class Board:
                 else:
                     self.board[row].append(0)
 
+    def move(self, piece, row, col):
+        """Move a Piece."""
+        if piece != 0:
+            self.board[piece.row][piece.col], self.board[row][col] = self.board[row][col], self.board[piece.row][
+                piece.col]
+            piece.move(row, col)
+
+    def get_piece(self, row, col):
+        return self.board[row][col]
+
     def draw(self, win):
         """Draw all the squares and pieces."""
         self.draw_squares(win)
@@ -46,3 +54,11 @@ class Board:
                 piece = self.board[row][col]
                 if piece != 0:
                     piece.draw(win)
+
+    def get_valid_moves(self, piece):
+        moves = {}
+        left = piece.col - 1
+        right = piece.col + 1
+        up = piece.row - 1
+        down = piece.row + 1
+        row = piece.row
