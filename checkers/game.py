@@ -31,16 +31,18 @@ class Game:
         if self.selected:
             # If a piece is selected, then try to move that piece to (row, col).
             result = self._move(row, col)
+
+            # If cannot move the selected piece to (row, col),
+            # then try to select the piece at (row, col)
             if not result:
-                # If cannot move the selected piece to (row, col),
-                # then try to select the piece at (row, col)
                 self.selected = None
                 self.select(row, col)
         else:
             # If there is no already selected pieced, then try to select the piece at (row, col).
             piece = self.board.get_piece(row, col)
-            if piece != 0 and piece.color == self.turn:
-                # If the selected piece is of its turn
+
+            # If the selected piece is in its turn, select that piece and find its valid moves.
+            if piece is not None and piece.color == self.turn:
                 self.selected = piece
                 self.valid_moves = self.board.get_valid_moves(piece)
                 return True
@@ -49,7 +51,7 @@ class Game:
     def _move(self, row, col):
         """Move the selected piece in to the (row, col) square."""
         piece = self.board.get_piece(row, col)
-        if self.selected and piece != 0 and (row, col) in self.valid_moves:
+        if self.selected is not None and piece is not None and (row, col) in self.valid_moves:
             self.board.move(self.selected, row, col)
             self.change_turn()
             return True
