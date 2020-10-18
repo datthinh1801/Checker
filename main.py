@@ -31,6 +31,7 @@ class Checker:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     # Get the row number and column number of the clicked position.
                     row, col = self._get_row_col_from_mouse(pygame.mouse.get_pos())
+                    self.game.select(row, col)
 
                 self.game.update()
 

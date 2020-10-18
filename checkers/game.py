@@ -1,6 +1,7 @@
 import pygame
 from .board import Board
 from .constants import WHITE, BLACK
+from .constants import BLUE, SQUARE_SIZE
 
 
 class Game:
@@ -13,6 +14,7 @@ class Game:
     def update(self):
         """Up date game's surface."""
         self.board.draw(self.win)
+        self.draw_valid_moves()
         pygame.display.update()
 
     def _init(self):
@@ -28,8 +30,8 @@ class Game:
 
     def select(self, row, col):
         """Select a piece."""
-        if self.selected:
-            # If a piece is selected, then try to move that piece to (row, col).
+        if self.selected is not None:
+            # If a piece has already been selected, then try to move that piece to (row, col).
             result = self._move(row, col)
 
             # If cannot move the selected piece to (row, col),
@@ -38,7 +40,7 @@ class Game:
                 self.selected = None
                 self.select(row, col)
         else:
-            # If there is no already selected pieced, then try to select the piece at (row, col).
+            # If there is no selected pieced, then try to select the piece at (row, col).
             piece = self.board.get_piece(row, col)
 
             # If the selected piece is in its turn, select that piece and find its valid moves.
@@ -51,14 +53,26 @@ class Game:
     def _move(self, row, col):
         """Move the selected piece in to the (row, col) square."""
         piece = self.board.get_piece(row, col)
-        if self.selected is not None and piece is not None and (row, col) in self.valid_moves:
+        if self.selected is not None and piece is None and (row, col) in self.valid_moves:
             self.board.move(self.selected, row, col)
             self.change_turn()
             return True
         return False
 
     def change_turn(self):
+        """Change turn."""
         if self.turn == WHITE:
             self.turn = BLACK
         else:
             self.turn = WHITE
+
+        self.valid_moves = {}
+        self.selected = None
+
+    def draw_valid_moves(self):
+        """Draw valid moves."""
+        for move in self.valid_moves:
+            row, col = move
+            pygame.draw.circle(self.win, BLUE,
+                               (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2),
+                               SQUARE_SIZE // 4)

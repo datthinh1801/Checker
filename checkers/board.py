@@ -1,6 +1,7 @@
 import pygame
 from .constants import WHITE, BLACK, ROWS, COLS, SQUARE_SIZE
 from .piece import Piece
+from copy import deepcopy
 
 
 class Board:
@@ -55,6 +56,12 @@ class Board:
                 if piece is not None:
                     piece.draw(win)
 
+    def remove_piece(self, row, col):
+        """Remove a defeated piece from board and return it."""
+        piece = self.get_piece(row, col)
+        self.board[row][col] = None
+        return piece
+
     def get_valid_moves(self, piece):
         # The 'moves' arg stores pos (x, y) as keys, and the opponent piece which it jumps over,
         # or None for an empty square as values.
@@ -64,153 +71,142 @@ class Board:
         up = piece.row - 1
         down = piece.row + 1
 
-        # self._go_left_up(up, left, piece.color, moves)
-        # self._go_left_down(down, left, piece.color, moves)
-        # self._go_right_up(up, right, piece.color, moves)
-        # self._go_right_down(down, right, piece.color, moves)
+        backup_board = deepcopy(self.board)
+
+        self._go_left_up(up, left, piece.color, moves)
+        self._go_left_down(down, left, piece.color, moves)
+        self._go_right_up(up, right, piece.color, moves)
+        self._go_right_down(down, right, piece.color, moves)
         return moves
 
-    def _go_left_up(self, up, left, color, moves):
-        """Find valid moves from (col, up) to top left."""
+    def _go_left_up(self, row, col, color, moves, skipped=[]):
         jumped = []
 
-        for row in range(up, -1, -1):
-            if left < 0:
-                break
+        if col < 0 or row < 0:
+            return
 
-            # Get the piece located at (up, left).
-            piece = self.get_piece(up, left)
+        # Get the piece located at (row, col).
+        piece = self.get_piece(row, col)
 
-            # If there is a checker at (up, left).
-            if piece is not None:
-                # If the piece is in the same Team.
-                if piece.color == color:
-                    # Pop the recently jumped piece if it intervenes the path.
-                    if jumped and jumped[-1].row == up + 1 and jumped[-1].col == left + 1:
-                        jumped.pop()
-                    break
-                else:
-                    # Pop the recently jumped piece if it intervenes the path.
-                    if jumped and jumped[-1].row == up + 1 and jumped[-1].col == left + 1:
-                        jumped.pop()
-                        break
-                    else:
-                        if piece.row > 0 and piece.col > 0:
-                            jumped.append(piece)
+        # If there is a checker at (row, col).
+        if piece is not None:
+            # If the piece is in the same Team.
+            if piece.color == color:
+                # Pop the recently jumped piece if it intervenes the path.
+                if jumped and jumped[-1].row == row + 1 and jumped[-1].col == col + 1:
+                    jumped.pop()
             else:
-                moves[(left, up)] = None
-                if jumped and jumped[-1].row == up + 1 and jumped[-1].col == left + 1:
-                    moves[(left, up)] = jumped[-1]
-            left -= 1
+                # Pop the recently jumped piece if it intervenes the path.
+                if jumped and jumped[-1].row == row + 1 and jumped[-1].col == col + 1:
+                    jumped.pop()
+                else:
+                    if piece.row > 0 and piece.col > 0:
+                        jumped.append(piece)
+        else:
+            if jumped and jumped[-1].row == row + 1 and jumped[-1].col == col + 1:
+                moves[(row - 1, col - 1)] = jumped[-1]
+            else:
+                moves[(row, col)] = None
 
-        for piece in jumped:
-            self._go_left_down(piece.row + 1, piece.col - 1, piece.color, moves)
-            self._go_right_up(piece.row - 1, piece.col + 1, piece.color, moves)
+        # for piece in jumped:
+        #     self._go_left_down(piece.row - 1, piece.col - 1, color, moves)
+        #     self._go_right_up(piece.row - 1, piece.col - 1, color, moves)
 
-    def _go_left_down(self, down, left, color, moves):
-        """Find valid moves from (col, row_start) to bottom left."""
+    def _go_left_down(self, row, col, color, moves):
         jumped = []
 
-        for row in range(down, ROWS + 1, 1):
-            if left < 0:
-                break
+        if col < 0 or row >= ROWS:
+            return
 
-            # Get the piece located at (down, left).
-            piece = self.get_piece(down, left)
+        # Get the piece located at (row, col).
+        piece = self.get_piece(row, col)
 
-            # If there is a checker at (down, left).
-            if piece is not None:
-                # If the piece is in the same Team.
-                if piece.color == color:
-                    # Pop the recently jumped piece if it intervenes the path.
-                    if jumped and jumped[-1].row == down - 1 and jumped[-1].col == left + 1:
-                        jumped.pop()
-                    break
-                else:
-                    # Pop the recently jumped piece if it intervenes the path.
-                    if jumped and jumped[-1].row == down - 1 and jumped[-1].col == left + 1:
-                        jumped.pop()
-                        break
-                    else:
-                        if piece.row < ROWS and piece.col < ROWS:
-                            jumped.append(piece)
+        # If there is a checker at (down, left).
+        if piece is not None:
+            # If the piece is in the same Team.
+            if piece.color == color:
+                # Pop the recently jumped piece if it intervenes the path.
+                if jumped and jumped[-1].row == row - 1 and jumped[-1].col == col + 1:
+                    jumped.pop()
             else:
-                moves[(left, down)] = None
-                if jumped and jumped[-1].row == down - 1 and jumped[-1].col == left + 1:
-                    moves[(left, down)] = jumped[-1]
-            left -= 1
+                # Pop the recently jumped piece if it intervenes the path.
+                if jumped and jumped[-1].row == row - 1 and jumped[-1].col == col + 1:
+                    jumped.pop()
+                else:
+                    if piece.row < ROWS - 1 and piece.col > 0:
+                        jumped.append(piece)
+        else:
+            if jumped and jumped[-1].row == row - 1 and jumped[-1].col == col + 1:
+                moves[(row + 1, col - 1)] = jumped[-1]
+            else:
+                moves[(row, col)] = None
 
-        for piece in jumped:
-            pass
+        # for piece in jumped:
+        #     self._go_left_up(piece.row + 1, piece.col - 1, color, moves)
+        #     self._go_right_down(piece.row + 1, piece.col - 1, color, moves)
 
-    def _go_right_up(self, up, right, color, moves):
-        """Find valid moves from (col, row_start) to top right."""
+    def _go_right_up(self, row, col, color, moves):
         jumped = []
 
-        for row in range(up, -1, -1):
-            if right >= COLS:
-                break
+        if col >= COLS or row < 0:
+            return
 
-            # Get the piece located at (up, right).
-            piece = self.get_piece(up, right)
+            # Get the piece located at (row, col).
+        piece = self.get_piece(row, col)
 
-            # If there is a checker at (up, right).
-            if piece is not None:
-                # If the piece is in the same Team.
-                if piece.color == color:
-                    # Pop the recently jumped piece if it intervenes the path.
-                    if jumped and jumped[-1].row == up + 1 and jumped[-1].col == right - 1:
-                        jumped.pop()
-                    break
-                else:
-                    # Pop the recently jumped piece if it intervenes the path.
-                    if jumped and jumped[-1].row == up + 1 and jumped[-1].col == right - 1:
-                        jumped.pop()
-                        break
-                    else:
-                        if piece.row < ROWS and piece.col < ROWS:
-                            jumped.append(piece)
+        # If there is a checker at (row, col).
+        if piece is not None:
+            # If the piece is in the same Team.
+            if piece.color == color:
+                # Pop the recently jumped piece if it intervenes the path.
+                if jumped and jumped[-1].row == row + 1 and jumped[-1].col == col - 1:
+                    jumped.pop()
             else:
-                moves[(right, up)] = None
-                if jumped and jumped[-1].row == up + 1 and jumped[-1].col == right - 1:
-                    moves[(right, up)] = jumped[-1]
-            right += 1
+                # Pop the recently jumped piece if it intervenes the path.
+                if jumped and jumped[-1].row == row + 1 and jumped[-1].col == col - 1:
+                    jumped.pop()
+                else:
+                    if piece.row > 0 and piece.col < COLS - 1:
+                        jumped.append(piece)
+        else:
+            if jumped and jumped[-1].row == row + 1 and jumped[-1].col == col - 1:
+                moves[(row - 1, col + 1)] = jumped[-1]
+            else:
+                moves[(row, col)] = None
 
-        for piece in jumped:
-            pass
+        # for piece in jumped:
+        #     self._go_left_up(piece.row - 1, piece.col + 1, color, moves)
+        #     self._go_right_down(piece.row - 1, piece.col + 1, color, moves)
 
-    def _go_right_down(self, down, right, color, moves):
-        """Find valid moves from (col , row_start) to bottom right."""
+    def _go_right_down(self, row, col, color, moves):
         jumped = []
 
-        for row in range(down, ROWS + 1, 1):
-            if right >= COLS:
-                break
+        if col >= COLS or row >= COLS:
+            return
 
-            # Get the piece located at (down, right).
-            piece = self.get_piece(down, right)
+            # Get the piece located at (row, col).
+        piece = self.get_piece(row, col)
 
-            # If there is a checker at (down, right).
-            if piece is not None:
-                # If the piece is in the same Team.
-                if piece.color == color:
-                    # Pop the recently jumped piece if it intervenes the path.
-                    if jumped and jumped[-1].row == down - 1 and jumped[-1].col == right - 1:
-                        jumped.pop()
-                    break
-                else:
-                    # Pop the recently jumped piece if it intervenes the path.
-                    if jumped and jumped[-1].row == down - 1 and jumped[-1].col == right - 1:
-                        jumped.pop()
-                        break
-                    else:
-                        if piece.row < ROWS and piece.col < ROWS:
-                            jumped.append(piece)
+        # If there is a checker at (down, right).
+        if piece is not None:
+            # If the piece is in the same Team.
+            if piece.color == color:
+                # Pop the recently jumped piece if it intervenes the path.
+                if jumped and jumped[-1].row == row - 1 and jumped[-1].col == col - 1:
+                    jumped.pop()
             else:
-                moves[(right, down)] = None
-                if jumped and jumped[-1].row == down - 1 and jumped[-1].col == right - 1:
-                    moves[(right, down)] = jumped[-1]
-            right += 1
+                # Pop the recently jumped piece if it intervenes the path.
+                if jumped and jumped[-1].row == row - 1 and jumped[-1].col == col - 1:
+                    jumped.pop()
+                else:
+                    if piece.row < ROWS - 1 and piece.col < COLS - 1:
+                        jumped.append(piece)
+        else:
+            if jumped and jumped[-1].row == row - 1 and jumped[-1].col == col - 1:
+                moves[(row + 1, col + 1)] = jumped[-1]
+            else:
+                moves[(row, col)] = None
 
-        for piece in jumped:
-            pass
+        # for piece in jumped:
+        #     self._go_left_down(piece.row + 1, piece.col + 1, color, moves)
+        #     self._go_right_up(piece.row + 1, piece.col + 1, color, moves)
