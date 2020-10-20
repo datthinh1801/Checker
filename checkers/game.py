@@ -55,6 +55,9 @@ class Game:
         piece = self.board.get_piece(row, col)
         if self.selected is not None and piece is None and (row, col) in self.valid_moves:
             self.board.move(self.selected, row, col)
+            if self.valid_moves[(row, col)] is not None:
+                for defeated_piece in self.valid_moves[(row, col)]:
+                    self.board.remove_piece(defeated_piece.row, defeated_piece.col)
             self.change_turn()
             return True
         return False
