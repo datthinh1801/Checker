@@ -1,6 +1,7 @@
 import pygame
 from .constants import WHITE, BLACK, ROWS, COLS, SQUARE_SIZE
 from .piece import Piece
+from copy import deepcopy
 
 
 class Board:
@@ -63,41 +64,45 @@ class Board:
         # The 'moves' arg stores pos (x, y) as keys, and the piece over which it jumps,
         # or None for an empty square as values.
         moves = {}
-        left = piece.col - 1
-        right = piece.col + 1
-        up = piece.row - 1
-        down = piece.row + 1
+        row = piece.row
+        col = piece.col
 
-        # if piece.color == BLACK:
-        #     moves.update(self._move_left(up, max(up - 2, -1), -1, left, piece.color))
-        #     moves.update(self._move_right(up, max(up - 2, -1), -1, right, piece.color))
-        # else:
-        #     moves.update(self._move_left(down, min(down + 2, ROWS), 1, left, piece.color))
-        #     moves.update(self._move_right(down, min(down + 2, ROWS), 1, right, piece.color))
+        # Get valid left-up moves.
+        moves.update(self._move_left(row - 1, max(row - 3, -1), -1, col - 1, piece.color))
 
-        moves.update(self._move_left(up, max(up - 2, -1), -1, left, piece.color))
-        moves.update(self._move_right(up, max(up - 2, -1), -1, right, piece.color))
-        moves.update(self._move_left(down, min(down + 2, ROWS), 1, left, piece.color))
-        moves.update(self._move_right(down, min(down + 2, ROWS), 1, right, piece.color))
+        # Get valid right-up moves.
+        moves.update(self._move_right(row - 1, max(row - 3, -1), -1, col + 1, piece.color))
+
+        # Get valid left-down moves.
+        moves.update(self._move_left(row + 1, min(row + 3, ROWS), 1, col - 1, piece.color))
+
+        # Get valid right-down moves.
+        moves.update(self._move_right(row + 1, min(row + 3, ROWS), 1, col + 1, piece.color))
+
         return moves
 
-    def _move_left(self, start, stop, step, col, color, skipped_pieces=[]):
+    def _move_left(self, start, stop, step, col, color, jumped_pieces=None):
         """
         Check if the selected piece can move to (row, col) position diagonally.
 
         :param start: starts checking from start row.
         :param stop: stops checking when reaches this stop row.
-        :param step: +1 if move up, and -1 if move down.
+        :param step: -1 if move up, and +1 if move down.
         :param col: column to start checking.
         :param color: color of the selected piece.
-        :param skipped_pieces: store stacked skipped pieces.
+        :param jumped_pieces: store stacked skipped pieces.
         :return: valid moves.
         """
         moves = {}
         last_selected = []
+        if jumped_pieces is None:
+            jumped_pieces = []
 
         for row in range(start, stop, step):
             if col < 0:
+                break
+
+            if (row, col) in map(lambda p: (p.row, p.col), jumped_pieces):
                 break
 
             # Select the piece located at (row, col).
@@ -120,54 +125,68 @@ class Board:
                         last_selected = [piece]
             # Else the piece is available.
             else:
-
-                # If we've jumped over some pieces (skipped_pieces) and
-                # jumped over a piece (last_selected) in this diagonal line,
-                # then this is a valid move.
-                if skipped_pieces and last_selected:
-                    moves[(row, col)] = skipped_pieces + last_selected
-                # If we've jumped over some pieces (skipped_pieces) but
-                # not jumped over any piece (last_selected) in this diagonal line,
-                # then this is an invalid move.
-                elif skipped_pieces:
-                    break
-                # If we've not jumped over any pieces any where.
+                # If we've jumped over some pieces (jumped_pieces)
+                if jumped_pieces:
+                    # And we can jump over another piece, then this is a valid move.
+                    if last_selected:
+                        moves[(row, col)] = jumped_pieces + last_selected
+                    # and we cannot jump over any piece, then this is an invalid move.
+                    else:
+                        break
+                # If we've never jumped over any piece
                 else:
-                    moves[(row, col)] = last_selected
-                    break
+                    # And we can jump over a piece, then this is a valid move.
+                    if last_selected:
+                        moves[(row, col)] = last_selected
+                    # And we can move to a blank piece without jumping, then this is also a valid move,
+                    # but we can only move ONCE in this diagonal line.
+                    else:
+                        moves[(row, col)] = None
+                        break
 
                 # If a piece is jumped over.
                 if last_selected:
-                    # In case moving up, we just check 3 rows upwards or until reach the edge.
-                    if step == -1:
-                        stop = max(row - 3, -1)
-                    # In case moving down, we just check 3 rows downwards or until reach the edge.
-                    else:
-                        stop = min(row + 3, ROWS)
-
                     # Recursive calls for multiple jumps.
-                    moves.update(self._move_left(row + step, stop, step, col - 1, color, skipped_pieces=last_selected))
-                    moves.update(self._move_right(row + step, stop, step, col + 1, color, skipped_pieces=last_selected))
+                    # Accumulate jumped_pieces for further recursive calls.
+                    jumped_pieces += last_selected
+                    # Move left up.
+                    moves.update(
+                        self._move_left(row - 1, max(row - 3, -1), -1, col - 1, color, jumped_pieces))
+                    # Move right up.
+                    moves.update(
+                        self._move_right(row - 1, max(row - 3, -1), -1, col + 1, color, jumped_pieces))
+                    # Move left down.
+                    moves.update(
+                        self._move_left(row + 1, min(row + 3, ROWS), 1, col - 1, color, jumped_pieces))
+                    # Move right down.
+                    moves.update(
+                        self._move_right(row + 1, min(row + 3, ROWS), 1, col + 1, color, jumped_pieces))
                     break
             col -= 1
         return moves
 
-    def _move_right(self, start, stop, step, col, color, skipped_pieces=[]):
+    def _move_right(self, start, stop, step, col, color, jumped_pieces=None):
         """
         Check if the selected piece can move to (row, col) position diagonally.
         :param start: starts checking at start row.
         :param stop: stops checking at stop row.
-        :param step: +1 if move up, and -1 if move down.
+        :param step: -1 if move up, and +1 if move down.
         :param col: column to start checking.
         :param color: color of the selected piece.
-        :param skipped_pieces: store stacked skipped pieces.
+        :param jumped_pieces: store stacked skipped pieces.
         :return: valid moves.
         """
         moves = {}
         last_selected = []
+        if jumped_pieces is None:
+            jumped_pieces = []
 
         for row in range(start, stop, step):
             if col >= COLS:
+                break
+
+            # If we've already jumped over this piece in previous call, then break.
+            if (row, col) in map(lambda p: (p.row, p.col), jumped_pieces):
                 break
 
             piece = self.get_piece(row, col)
@@ -189,34 +208,38 @@ class Board:
                         last_selected = [piece]
             # Else the piece is available.
             else:
-                # If we've jumped over some pieces (skipped_pieces) and
-                # jumped over a piece (last_selected) in this diagonal line,
-                # then this is a valid move.
-                if skipped_pieces and last_selected:
-                    moves[(row, col)] = skipped_pieces + last_selected
-                # If we've jumped over some pieces (skipped_pieces) but
-                # not jumped over any piece (last_selected) in this diagonal line,
-                # then this is an invalid move.
-                elif skipped_pieces:
-                    break
-                # If we've not jumped over any pieces any where.
+                # If we've jumped over some pieces (jumped_pieces)
+                if jumped_pieces:
+                    # And we can jump over another piece, then this is a valid move.
+                    if last_selected:
+                        moves[(row, col)] = jumped_pieces + last_selected
+                    # and we cannot jump over any piece, then this is an invalid move.
+                    else:
+                        break
+                # If we've never jumped over any piece
                 else:
-                    moves[(row, col)] = last_selected
-                    break
+                    # And we can jump over a piece, then this is a valid move.
+                    if last_selected:
+                        moves[(row, col)] = last_selected
+                    # And we can move to a blank piece without jumping, then this is also a valid move,
+                    # but we can only move ONCE in this diagonal line.
+                    else:
+                        moves[(row, col)] = None
+                        break
 
                 # If a piece is jumped over.
                 if last_selected:
-                    # In case moving up, we just check 3 rows upwards or until reach the edge.
-                    if step == -1:
-                        stop = max(row - 3, -1)
-                    # In case moving down, we just check 3 rows downwards or until reach the edge.
-                    else:
-                        stop = min(row + 3, ROWS)
-
                     # Recursive calls for multiple jumps.
-                    moves.update(self._move_left(row + step, stop, step, col - 1, color, skipped_pieces=last_selected))
-                    moves.update(self._move_right(row + step, stop, step, col + 1, color, skipped_pieces=last_selected))
+                    # Accumulate jumped_pieces for further recursive jumps.
+                    jumped_pieces += last_selected
+                    # Move left up.
+                    moves.update(self._move_left(row - 1, max(row - 3, -1), -1, col - 1, color, jumped_pieces))
+                    # Move right up.
+                    moves.update(self._move_right(row - 1, max(row - 3, -1), -1, col + 1, color, jumped_pieces))
+                    # Move left down.
+                    moves.update(self._move_left(row + 1, min(row + 3, ROWS), 1, col - 1, color, jumped_pieces))
+                    # Move right down.
+                    moves.update(self._move_right(row + 1, min(row + 3, ROWS), 1, col + 1, color, jumped_pieces))
                     break
             col += 1
-
         return moves
