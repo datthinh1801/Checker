@@ -21,7 +21,7 @@ class Game:
         """Set initial values for dynamic attributes."""
         self.selected = None
         self.board = Board()
-        self.turn = WHITE
+        self.turn = BLACK
         self.valid_moves = {}
 
     def reset(self):
@@ -56,8 +56,7 @@ class Game:
         if self.selected is not None and piece is None and (row, col) in self.valid_moves:
             self.board.move(self.selected, row, col)
             if self.valid_moves[(row, col)] is not None:
-                for defeated_piece in self.valid_moves[(row, col)]:
-                    self.board.remove_piece(defeated_piece.row, defeated_piece.col)
+                self.board.remove_pieces(self.valid_moves[(row, col)])
             self.change_turn()
             return True
         return False
@@ -78,4 +77,17 @@ class Game:
             row, col = move
             pygame.draw.circle(self.win, BLUE,
                                (col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2),
-                               SQUARE_SIZE // 4)
+                               SQUARE_SIZE // 8)
+
+    def get_winner(self):
+        """Get the winner if any."""
+        return self.board.get_winner()
+
+    def get_board(self):
+        """Get the board."""
+        return self.board
+
+    def ai_move(self, board):
+        """Update the current board with a new board containing AI's move."""
+        self.board = board
+        self.change_turn()

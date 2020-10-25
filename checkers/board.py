@@ -37,6 +37,22 @@ class Board:
                 else:
                     self.board[row].append(None)
 
+    def evaluate(self):
+        """
+        Evaluate game value for minimax algorithm.
+        Here, white is likely to represent the AI.
+        """
+        return self.white_left - self.black_left
+
+    def get_all_pieces(self, color):
+        """Get all the remaining pieces of a given color."""
+        pieces = []
+        for row in self.board:
+            for piece in row:
+                if piece is not None and piece.color == color:
+                    pieces.append(piece)
+        return pieces
+
     def move(self, piece, row, col):
         """Move a Piece."""
         if piece is not None:
@@ -56,9 +72,24 @@ class Board:
                 if piece is not None:
                     piece.draw(win)
 
-    def remove_piece(self, row, col):
+    def remove_pieces(self, pieces):
         """Remove a defeated piece from board and return it."""
-        self.board[row][col] = None
+        for piece in pieces:
+            if piece is not None:
+                self.board[piece.row][piece.col] = None
+                if piece.color == WHITE:
+                    self.white_left -= 1
+                else:
+                    self.black_left -= 1
+
+    def get_winner(self):
+        """Get winner if any."""
+        if self.white_left <= 0:
+            return BLACK
+        elif self.black_left <= 0:
+            return WHITE
+        else:
+            return None
 
     def get_valid_moves(self, piece):
         # The 'moves' arg stores pos (x, y) as keys, and the piece over which it jumps,

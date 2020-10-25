@@ -1,6 +1,7 @@
 import pygame
-from checkers.constants import WIDTH, HEIGHT, SQUARE_SIZE
+from checkers.constants import WIDTH, HEIGHT, SQUARE_SIZE, WHITE
 from checkers.game import Game
+from minimax.algorithm import minimax
 
 
 class Checker:
@@ -23,6 +24,15 @@ class Checker:
 
         while self.active:
             self.clock.tick(self.FPS)
+
+            if self.game.turn == WHITE:
+                value, new_board = minimax(self.game.get_board(), 3, True, self.game)
+                self.game.ai_move(new_board)
+
+            winner = self.game.get_winner()
+            if winner is not None:
+                print(winner)
+                self.active = False
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
