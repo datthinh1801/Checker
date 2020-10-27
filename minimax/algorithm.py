@@ -2,7 +2,7 @@ from copy import deepcopy
 import pygame
 
 WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
+DARK_RED = (100, 0, 0)
 
 
 def minimax(board, depth, max_player, game):
@@ -30,7 +30,7 @@ def minimax(board, depth, max_player, game):
     else:
         min_eval = float('inf')
         best_move = None
-        for move in get_all_moves(board, BLACK, game):
+        for move in get_all_moves(board, DARK_RED, game):
             evaluation = minimax(move, depth - 1, True, game)[0]
             min_eval = min(min_eval, evaluation)
             if min_eval == evaluation:
