@@ -1,5 +1,5 @@
 import pygame
-from .constants import WHITE, BLACK, ROWS, COLS, SQUARE_SIZE
+from .constants import WHITE, DARK_RED, DARK_GREEN, ROWS, COLS, SQUARE_SIZE
 from .piece import Piece
 from copy import deepcopy
 
@@ -17,7 +17,7 @@ class Board:
 
     def draw_squares(self, win):
         """Draw atomic squares of the Board."""
-        win.fill(BLACK)
+        win.fill(DARK_GREEN)
         for row in range(ROWS):
             for col in range(row % 2, COLS, 2):
                 pygame.draw.rect(win, WHITE, (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
@@ -31,7 +31,7 @@ class Board:
                     if row < 3:
                         self.board[row].append(Piece(row, col, WHITE))
                     elif row > 4:
-                        self.board[row].append(Piece(row, col, BLACK))
+                        self.board[row].append(Piece(row, col, DARK_RED))
                     else:
                         self.board[row].append(None)
                 else:
@@ -85,7 +85,7 @@ class Board:
     def get_winner(self):
         """Get winner if any."""
         if self.white_left <= 0:
-            return BLACK
+            return DARK_RED
         elif self.black_left <= 0:
             return WHITE
         else:
