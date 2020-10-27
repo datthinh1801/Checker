@@ -1,6 +1,6 @@
 import pygame
 from .board import Board
-from .constants import WHITE, BLACK
+from .constants import WHITE, DARK_RED
 from .constants import BLUE, SQUARE_SIZE
 
 
@@ -21,7 +21,7 @@ class Game:
         """Set initial values for dynamic attributes."""
         self.selected = None
         self.board = Board()
-        self.turn = BLACK
+        self.turn = DARK_RED
         self.valid_moves = {}
 
     def reset(self):
@@ -64,7 +64,7 @@ class Game:
     def change_turn(self):
         """Change turn."""
         if self.turn == WHITE:
-            self.turn = BLACK
+            self.turn = DARK_RED
         else:
             self.turn = WHITE
 
