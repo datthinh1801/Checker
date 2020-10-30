@@ -5,16 +5,15 @@ from minimax.algorithm import minimax
 from checkers.button import PlayButton
 
 BG_DIR = 'asset/bg.jpg'
+ICON_DIR = 'asset/icon.jfif'
 
 
 class Checker:
     def __init__(self):
         """Initialize the main game object."""
         # Init pygame.
-        pygame.init()
-        pygame.display.set_caption('Checkers')
-        self.FPS = 60
-        self.win = pygame.display.set_mode((WIDTH, HEIGHT))
+        self._init_pygame_object('Checker', (WIDTH, HEIGHT), 60)
+        self._init_icon(ICON_DIR)
 
         # Init game status attributes.
         self.active = True
@@ -29,6 +28,18 @@ class Checker:
 
         # Load background image.
         self.bg_img = pygame.transform.scale(pygame.image.load(BG_DIR), (WIDTH, HEIGHT))
+
+    def _init_pygame_object(self, game_caption, window_size, fps):
+        """Initialize pygame object with some basic attributes."""
+        pygame.init()
+        pygame.display.set_caption(game_caption)
+        self.FPS = fps
+        self.win = pygame.display.set_mode(window_size)
+
+    def _init_icon(self, icon_path):
+        """Initialize icon for the game."""
+        self.icon = pygame.image.load(ICON_DIR)
+        pygame.display.set_icon(self.icon)
 
     @classmethod
     def _get_row_col_from_mouse(cls, pos):
@@ -91,6 +102,7 @@ class Checker:
                 self.game.update()
             else:
                 self._start_new_game()
+
             self._check_events()
 
 
